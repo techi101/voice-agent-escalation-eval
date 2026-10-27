@@ -22,6 +22,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--domain", required=True, choices=domain.DOMAINS)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--max-attempts", type=int, default=3, help="write/check rounds; failed specs are dropped after the last")
     args = ap.parse_args()
     dom = domain.load(args.domain)
     scen = dom.build_scenarios()
@@ -32,7 +33,7 @@ def main():
     with (data / "scenarios.jsonl").open("w", encoding="utf-8") as f:
         for s in scen:
             f.write(json.dumps(s.to_dict(), ensure_ascii=False) + "\n")
-    rows = build_transcripts(dom, scen, data)
+    rows = build_transcripts(dom, scen, data, max_attempts=args.max_attempts)
     with (data / "transcripts.jsonl").open("w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")

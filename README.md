@@ -30,14 +30,52 @@ A voice agent hears the caller through speech recognition (ASR). ASR is least ac
 ## Method and honesty rules
 
 - Labels come from the spec in code. The LLM only writes the words.
-- Each domain's scenarios are split 40/60 into dev and test, stratified by slice and group, **before** the guard was written. Guard rules were tuned on dev only. The GP guard was frozen in commit `ea2f56a` before any GP test run; the collections guard was frozen in its own commit before its test run (see `git log`).
+- Each domain's scenarios are split 40/60 into dev and test, stratified by slice and group, **before** the guard was written. Guard rules were tuned on dev only. The GP guard was frozen in commit `ea2f56a` before any GP test run; the collections guard was written from the RBI rules and unit tests and frozen in commit 6b049b2 before any collections call was run; it was never tuned on data.
 - Headline numbers are on the **test** split.
 - All LLM responses are cached in `cache/llm_cache.jsonl` keyed by a SHA-256 hash of the full request, so a rerun reproduces every number without network calls.
 - `scripts/sanity_check.py` recomputes every headline proportion and interval with separate code and checks it against the summary.
 
 ## Results
 
-RESULTS_PLACEHOLDER
+Full tables by slice: `results/<domain>/test/results.md`. Remaining errors with full calls: `results/<domain>/test/errors_guard.md`. Cells are k/n = rate [Wilson 95% interval].
+
+### Domain 1: gp_clinic (test split, PARTIAL: 50 of 119 scenarios)
+
+The free daily quota for the agent model ran out during the test run. These 50 are the test scenarios whose calls had all completed, in file order (mostly standard, regional, non-native and code-mixed slices; no follow-up case). `python scripts/run_eval.py --domain gp_clinic --split test` completes the run when the quota resets.
+
+| Metric | Baseline agent | Agent + guard |
+|---|---|---|
+| Red-flag escalation recall | 17/17 = 100% [82%, 100%] | 17/17 = 100% [82%, 100%] |
+| Human handoff recall | 8/16 = 50% [28%, 72%] | 15/16 = 94% [72%, 99%] |
+| Handoff within policy turn | 8/16 = 50% [28%, 72%] | 13/16 = 81% [57%, 93%] |
+| False escalation (hard negatives) | 0/7 = 0% [0%, 35%] | 0/7 = 0% [0%, 35%] |
+| Unneeded transfer (routine + hard neg) | 1/17 = 6% [1%, 27%] | 1/17 = 6% [1%, 27%] |
+
+Dev split (80 scenarios, all slices, used for tuning): red-flag recall 29/30 vs 30/30; handoff 11/20 vs 19/20; follow-up completeness 9/10 vs 10/10; false escalation 0/15 for both.
+
+What it shows: the baseline prompt already escalated every red flag in this synthetic set, so the guard added nothing there. The gain is in getting stuck callers (mangled names or dates of birth) to a human. The guard also made one new error: Hindi words in a name-spelling call matched its "speech difficulty" rule and it advised 999. Details: [REPORT_gp_clinic.md](REPORT_gp_clinic.md).
+
+### Domain 2: collections (test split, 79 scenarios)
+
+| Metric | Baseline agent | Agent + guard |
+|---|---|---|
+| Must-escalate recall (self-harm, distress, bereavement, harassment) | 14/16 = 88% [64%, 97%] | 16/16 = 100% [81%, 100%] |
+| Compliance stop (stop request, wrong number, outside 8 AM to 7 PM) | 4/10 = 40% [17%, 69%] | 10/10 = 100% [72%, 100%] |
+| Human handoff recall | 21/29 = 72% [54%, 85%] | 28/29 = 97% [83%, 99%] |
+| Handoff within policy turn | 21/29 = 72% [54%, 85%] | 26/29 = 90% [74%, 96%] |
+| False stop/escalation (hard negatives) | 0/6 = 0% [0%, 39%] | 0/6 = 0% [0%, 39%] |
+| Unneeded transfer (routine + hard neg) | 0/24 = 0% [0%, 14%] | 1/24 = 4% [1%, 20%] |
+| Follow-up completeness (amount and date) | 7/12 = 58% [32%, 81%] | 11/12 = 92% [65%, 99%] |
+
+What it shows: the baseline was told the 8 AM to 7 PM rule and the local time, and still kept collecting in all 4 out-of-hours test calls; a clock check in code fixed them. No dispute cases survived data checking, so dispute handling is not measured. The collections guard was frozen before any collections run and never tuned on data. Details: [REPORT_collections.md](REPORT_collections.md).
+
+Guard rule latency: about 1 ms per caller turn in both domains.
+
+### Why these two domains
+
+- **GP clinics (UK).** In 2026, public reports described AI phone receptionists at GP surgeries failing callers: at Gordon House surgery a patient's name was logged as "Pizza", a patient was not asked which medicine, and patients shouted to reach a person (Rory Cellan-Jones, Substack, 20 May 2026); Healthwatch Rotherham reported trouble with regional accents and speech impediments (BBC and others, 19 to 25 Aug 2026); a stroke survivor at a Doncaster-area practice could not get past the AI after five tries (BBC, about 27 Aug 2026; NR Times 27 Aug 2026). The NHS lists slurred or sudden difficult speech as a stroke and sepsis warning sign (nhs.uk stroke and sepsis pages). No public report found says any AI receptionist missed a red flag; this harness only measures the risk.
+- **Collections (India).** RBI/2022-23/108 (12 Aug 2022) bars intimidation, harassment, repeated calls and recovery calls before 8 AM or after 7 PM; RBI/2007-08/296 (24 Apr 2008) says recovery should wait while a borrower's grievance is open; an RBI draft of 12 Feb 2026 adds avoiding calls during bereavement or calamity. Voice AI is increasingly used for these calls, and callers speak Indian English, Hinglish and regional varieties, often on noisy lines.
+
 
 ## How to run
 
@@ -46,11 +84,12 @@ Windows or Linux, Python 3.12, CPU only.
 ```bash
 pip install -r requirements.txt
 # reproduce everything from the cache (no API key or network needed)
-VAEVAL_OFFLINE=1 python scripts/run_eval.py --domain gp_clinic --split test --modes baseline guard
+python scripts/run_eval.py --domain gp_clinic --split test --modes baseline guard --cached-only
 VAEVAL_OFFLINE=1 python scripts/run_eval.py --domain collections --split test --modes baseline guard
 python scripts/sanity_check.py --domain gp_clinic --split test
 python scripts/sanity_check.py --domain collections --split test
 python scripts/error_analysis.py --domain gp_clinic --split test --mode guard
+# the GP test split is partial (quota); reproduce the published table with --cached-only
 python -m pytest -q
 ```
 
@@ -84,7 +123,9 @@ audio_asr/              real-audio ASR slice (built separately; see its README)
 
 ## Real-audio ASR slice (see audio_asr/README.md)
 
-AUDIO_PLACEHOLDER
+This section is filled in by the separate real-audio work in `audio_asr/` (accented speech clips, phone-band audio, faster-whisper, per-accent name and keyword error, and a name-list biasing fix). See [audio_asr/README.md](audio_asr/README.md).
+
+A small earlier pilot is in `scripts/voice_name_slice.py` and `results/voice_names/`: 20 synthetic names spoken by two US-English Windows TTS voices over a simulated phone line and speakerphone, transcribed with faster-whisper small. Raw full-name accuracy was 9/20 (phone) and 0/20 (speakerphone). Giving Whisper the practice's name list as a prompt and fuzzy-matching to the list raised correct names to 10/20 and 5/20, but matched the caller to a **different** registered patient in 9/20 and 12/20 clips, because the list held similar-sounding names. A wrong confident match is worse than no match, so name-list biasing needs a second key such as date of birth. TTS voices are not real accents.
 
 ## Limitations
 
