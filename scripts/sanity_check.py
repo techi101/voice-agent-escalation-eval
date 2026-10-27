@@ -1,26 +1,28 @@
-"""Independent recomputation of the headline numbers.
+"""Independent recomputation of the headline numbers for one domain.
 
-Reads results/<split>/calls_*.csv with the csv module only (no pandas, no
-gpeval.metrics), recomputes each proportion and its Wilson interval from
-scratch, and compares with results/<split>/summary_overall.csv. Also
-re-derives "correct" from the scenario spec (data/scenarios.jsonl) rather than
-trusting the column written by the runner.
+Reads results/<domain>/<split>/calls_*.csv with the csv module only (no pandas,
+no vaeval.metrics), recomputes each proportion and its Wilson interval from
+scratch, and compares with summary_overall.csv. It also re-derives "correct"
+from the scenario spec (data/<domain>/scenarios.jsonl) rather than trusting
+the column written by the runner.
 
-Usage: python scripts/sanity_check.py --split test
+Usage: python scripts/sanity_check.py --domain gp_clinic --split test
 """
 import argparse
 import csv
 import json
 import math
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from vaeval import domain  # noqa: E402  (only used for the metric list and paths)
 
 
 def wilson_again(k, n):
-    # written out separately on purpose (different form from gpeval.metrics)
-    if n == 0:
-        return None
+    # written out separately on purpose (different form from vaeval.metrics)
     z = 1.96
     phat = k / n
     a = phat + z * z / (2 * n)
@@ -31,42 +33,53 @@ def wilson_again(k, n):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--domain", required=True, choices=domain.DOMAINS)
     ap.add_argument("--split", default="test")
     args = ap.parse_args()
-    out = ROOT / "results" / args.split
-    spec = {json.loads(l)["id"]: json.loads(l) for l in (ROOT / "data" / "scenarios.jsonl").open(encoding="utf-8")}
+    dom = domain.load(args.domain)
+    out = domain.results_dir(args.domain, args.split)
+    spec = {}
+    for line in (domain.data_dir(args.domain) / "scenarios.jsonl").open(encoding="utf-8"):
+        s = json.loads(line)
+        spec[s["id"]] = s
     summary = {r["mode"]: r for r in csv.DictReader((out / "summary_overall.csv").open(encoding="utf-8"))}
     problems = 0
     for path in sorted(out.glob("calls_*.csv")):
         rows = list(csv.DictReader(path.open(encoding="utf-8")))
         mode = rows[0]["mode"]
-        counts = {k: [0, 0] for k in ["red_flag_recall", "human_handoff_recall", "false_escalation_hard_neg", "followup_completeness"]}
-        for r in rows:
-            s = spec[r["id"]]
-            correct = r["final_action"] in s["acceptable"]          # from the spec, not the csv column
-            if str(correct) != r["correct"]:
-                print(f"  MISMATCH correct column for {r['id']}")
-                problems += 1
-            if s["group"] == "red_flag":
-                counts["red_flag_recall"][1] += 1
-                counts["red_flag_recall"][0] += correct
-            if s["group"] in ("human", "capture"):
-                counts["human_handoff_recall"][1] += 1
-                counts["human_handoff_recall"][0] += r["final_action"] == "transfer_to_human"
-            if s["group"] == "hard_negative":
-                counts["false_escalation_hard_neg"][1] += 1
-                counts["false_escalation_hard_neg"][0] += r["final_action"] in ("advise_999", "advise_111")
-            if s["followups"]:
-                counts["followup_completeness"][1] += 1
-                counts["followup_completeness"][0] += r["followup_asked"] == "True"
-        print(f"[{mode}] {len(rows)} calls")
-        for name, (k, n) in counts.items():
+        print(f"[{args.domain} / {mode}] {len(rows)} calls")
+        for key, _label, kind, groups in dom.METRICS:
+            k = n = 0
+            for r in rows:
+                s = spec[r["id"]]
+                correct = r["final_action"] in s["acceptable"]       # from the spec, not the csv column
+                if str(correct) != r["correct"]:
+                    print(f"  MISMATCH correct column for {r['id']}")
+                    problems += 1
+                if kind == "followup":
+                    if s["followups"]:
+                        n += 1
+                        k += r["followup_asked"] == "True"
+                    continue
+                if s["group"] not in groups:
+                    continue
+                n += 1
+                if kind == "correct":
+                    k += correct
+                elif kind == "transfer":
+                    k += r["final_action"] == dom.TRANSFER
+                elif kind == "transfer_in_time":
+                    k += r["final_action"] == dom.TRANSFER and float(r["final_turn"]) <= float(s["handoff_by_turn"])
+                elif kind == "escalated":
+                    k += r["final_action"] in dom.ESCALATIONS
+            if n == 0:
+                continue
             p, lo, hi = wilson_again(k, n)
-            sk, sn = int(summary[mode][name + "_k"]), int(summary[mode][name + "_n"])
-            slo, shi = float(summary[mode][name + "_lo"]), float(summary[mode][name + "_hi"])
+            sk, sn = int(summary[mode][key + "_k"]), int(summary[mode][key + "_n"])
+            slo, shi = float(summary[mode][key + "_lo"]), float(summary[mode][key + "_hi"])
             ok = (k, n) == (sk, sn) and abs(lo - slo) < 1e-3 and abs(hi - shi) < 1e-3
             problems += not ok
-            print(f"  {name:28s} recomputed {k}/{n}={p:.3f} [{lo:.3f},{hi:.3f}]  summary {sk}/{sn} [{slo:.3f},{shi:.3f}]  {'OK' if ok else 'MISMATCH'}")
+            print(f"  {key:30s} recomputed {k}/{n}={p:.3f} [{lo:.3f},{hi:.3f}]  summary {sk}/{sn} [{slo:.3f},{shi:.3f}]  {'OK' if ok else 'MISMATCH'}")
     print("SANITY CHECK", "PASSED" if problems == 0 else f"FAILED ({problems} problems)")
 
 

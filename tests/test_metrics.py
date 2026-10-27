@@ -7,8 +7,18 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from gpeval.followup import asked_for  # noqa: E402
-from gpeval.metrics import metric_counts, turns_to_handoff, wilson  # noqa: E402
+import domains.gp_clinic as gp  # noqa: E402
+from vaeval.followup import asked_for as _asked_for  # noqa: E402
+from vaeval.metrics import metric_counts as _metric_counts  # noqa: E402
+from vaeval.metrics import turns_to_handoff, wilson  # noqa: E402
+
+
+def asked_for(field, replies):
+    return _asked_for(field, replies, gp.ASK_PATTERNS)
+
+
+def metric_counts(df):
+    return _metric_counts(df, gp.METRICS, gp.ESCALATIONS, gp.TRANSFER)
 
 
 def test_wilson_known_values():
@@ -61,6 +71,8 @@ def test_metric_counts_by_hand():
 def test_followup_detector():
     assert asked_for("medication_name", ["Of course. Which medication do you need?"])
     assert asked_for("medication_name", ["Could you tell me the name of the medicine?"])
+    # found in the manual check of dev outputs: plural "names of the tablets" was missed at first
+    assert asked_for("medication_name", ["Could you please tell me the names of the tablets you need to order?"])
     assert not asked_for("medication_name", ["Thanks, I've sent that to the prescriptions team."])
     assert asked_for("test_name", ["Which test were the results for?"])
     assert not asked_for("test_name", ["A clinician will call you back about your results."])

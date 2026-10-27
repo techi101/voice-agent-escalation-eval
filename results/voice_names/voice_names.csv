@@ -1,0 +1,41 @@
+name,voice,condition,raw,raw_ok,prompt,prompt_ok,fuzzy,fuzzy_score,fuzzy_ok
+Peter Holmes,Microsoft David Desktop,phone,"Hello, my name is Peter Holmes.",True,"Hello, my name is Peter Holmes.",True,Peter Holmes,100.0,True
+Peter Holmes,Microsoft David Desktop,speakerphone,"Hello, my name is Peter Cole.",False,"Hello, my name is Peter Cole.",False,Peter Holme,85.7,False
+Siobhan Gallagher,Microsoft Zira Desktop,phone,"Hello, my name is Siobhan Gallagher.",True,"Hello, my name is Syabin Gallagher.",False,Sharon Gallagher,81.2,False
+Siobhan Gallagher,Microsoft Zira Desktop,speakerphone,"Hello, my name is Simon Gallagher.",False,"Hello, my name is Sinead Gallagher.",False,Sinead Gallagher,100.0,False
+Agnieszka Wojcik,Microsoft David Desktop,phone,"Hello, my name is Agnieszka Wojcik.",True,"Hello, my name is Agnes Wojcik.",False,Agnes Wojcik,100.0,False
+Agnieszka Wojcik,Microsoft David Desktop,speakerphone,"Hello, my name is Agnieszka Orchard.",False,"Hello, my name is Agnes Wojcik.",False,Agnes Wojcik,100.0,False
+Ionut Popescu,Microsoft Zira Desktop,phone,"Hello, my name is Yonat Popescu.",False,"Hello, my name is Ionet Popescu.",False,Ionut Popescu,92.3,True
+Ionut Popescu,Microsoft Zira Desktop,speakerphone,"Hello, my name is Jonas Vapestu.",False,"Hello, my name is Ionela Popescu.",False,Ionela Popescu,100.0,False
+Chinedu Okafor,Microsoft David Desktop,phone,"Hello, my name is Chindu Akhapur.",False,"Hello, my name is Chindu Okafor.",False,Chinedu Okafor,96.3,True
+Chinedu Okafor,Microsoft David Desktop,speakerphone,"Hello, my name is Cheyenne Lockover.",False,"Hello, my name is Cheyenne Lockover.",False,Cheyenne Lockover,51.6,False
+Oluwaseun Adeyemi,Microsoft Zira Desktop,phone,"Hello, my name is Oluwazi Unita Yemi.",False,"Hello, my name is Olusegun Adeyemi.",False,Olusegun Adeyemi,100.0,False
+Oluwaseun Adeyemi,Microsoft Zira Desktop,speakerphone,"Hello, my name is Olway Dio and I'm a youngie.",False,"Hello, my name is Olaway Kio Hiddiyemi.",False,Olaway Kio Hiddiyemi,54.1,False
+Harpreet Kaur,Microsoft David Desktop,phone,"Hello, my name is Harpreet Kaur.",True,"Hello, my name is Harpreet Kaur.",True,Harpreet Kaur,100.0,True
+Harpreet Kaur,Microsoft David Desktop,speakerphone,Hello. My name is Harper E. Carr.,False,"Hello, my name is Harpreet Kaur.",True,Harpreet Kaur,100.0,True
+Gurpreet Sandhu,Microsoft Zira Desktop,phone,"Hello, my name is Gurpert Sandu.",False,"Hello, my name is Gurpur Sandhu.",False,Gurpreet Sandhu,85.7,True
+Gurpreet Sandhu,Microsoft Zira Desktop,speakerphone,"Hello, my name is Lucid Sandu.",False,"Hello, my name is Gluckert Sandhu.",False,Gluckert Sandhu,73.3,False
+Mohammed Rafiq,Microsoft David Desktop,phone,"Hello, my name is Mohammed Rafiq.",True,"Hello, my name is Mohammed Rafique.",True,Mohammed Rafique,100.0,False
+Mohammed Rafiq,Microsoft David Desktop,speakerphone,"Hello, my name is Will Comet Rasty.",False,"Hello, my name is Mohamed Rashid.",False,Mohamed Rashid,100.0,False
+Imran Qureshi,Microsoft Zira Desktop,phone,"Hello, my name is Imran Qureshi.",True,"Hello, my name is Imran Qureshi.",True,Imran Qureshi,100.0,True
+Imran Qureshi,Microsoft Zira Desktop,speakerphone,"Hello, my name is Anuram Sureshi.",False,"Hello, my name is Irfan Qureshi.",False,Irfan Qureshi,100.0,False
+Rahima Begum,Microsoft David Desktop,phone,"Hello, my name is Rahima Begum.",True,"Hello, my name is Rahim Abigum.",False,Rahim Abigum,78.3,False
+Rahima Begum,Microsoft David Desktop,speakerphone,"Hello, my name is Rick Himmel-Beatham.",False,"Hello, my name is Rahim Begum.",False,Rahim Begum,100.0,False
+Sunita Sharma,Microsoft Zira Desktop,phone,"Hello, my name is Sunita Sharma.",True,"Hello, my name is Sunita Sharma.",True,Sunita Sharma,100.0,True
+Sunita Sharma,Microsoft Zira Desktop,speakerphone,"Hello, my name is Anita Sharma.",False,"Hello, my name is Sunita Sharma.",True,Sunita Sharma,100.0,True
+Krzysztof Nowak,Microsoft David Desktop,phone,"Hello, my name is Christof Nowak.",False,"Hello, my name is Krystof Novak.",False,Krystof Novak,100.0,False
+Krzysztof Nowak,Microsoft David Desktop,speakerphone,"Hello, my name is Christophe Del Vec.",False,"Hello, my name is Krystof Novak.",False,Krystof Novak,100.0,False
+Andreea Ionescu,Microsoft Zira Desktop,phone,"Hello, my name is Andrea Ionescu.",False,"Hello, my name is Andrea Ionescu.",False,Andrea Ionescu,100.0,False
+Andreea Ionescu,Microsoft Zira Desktop,speakerphone,"Hello, my name is Andrea Ionesco.",False,"Hello, my name is Andreea Ionescu.",True,Andreea Ionescu,100.0,True
+Niamh O'Connor,Microsoft David Desktop,phone,"Hello, my name is Neomite O'Connor.",False,"Hello, my name is Nia Maite O'Connor.",False,Nia O'Connor,85.5,False
+Niamh O'Connor,Microsoft David Desktop,speakerphone,"Hello, my name is me and Michael Carter.",False,"Hello, my name is Nia Michael Connor.",False,Niamh Connor,85.5,False
+Gareth Llewellyn,Microsoft Zira Desktop,phone,"Hello, my name is Gareth Llewellyn.",True,"Hello, my name is Gareth Llewellyn.",True,Gareth Llewellyn,100.0,True
+Gareth Llewellyn,Microsoft Zira Desktop,speakerphone,"Hello, my name is Gareth O'Ellen.",False,"Hello, my name is Gareth Llewellyn.",True,Gareth Llewellyn,100.0,True
+Ade Bankole,Microsoft David Desktop,phone,"Hello, my name is Abe Bankley.",False,"Hello, my name is Ada Bankole.",False,Ada Bankole,100.0,False
+Ade Bankole,Microsoft David Desktop,speakerphone,Hello. My name is exactly...,False,Hello. My name is Ada Bankole.,False,Ada Bankole,100.0,False
+Priya Raghunathan,Microsoft Zira Desktop,phone,"Hello, my name is Priya Ravunathan.",False,"Hello, my name is Priya Raghunathan.",True,Priya Raghunathan,100.0,True
+Priya Raghunathan,Microsoft Zira Desktop,speakerphone,"Hello, my name is Cree, you're a unit then.",False,"Hello, my name is Priya Raghunatham.",False,Priya Raghunathan,94.1,True
+Zofia Kowalczyk,Microsoft David Desktop,phone,"Hello, my name is Sofia Kowalczyk.",False,"Hello, my name is Zofia Kowalcik.",False,Zofia Kowalczyk,89.7,True
+Zofia Kowalczyk,Microsoft David Desktop,speakerphone,"Hello, my name is Sophia Walcher.",False,"Hello, my name is Zofia Kowalski.",False,Zofia Kowalski,100.0,False
+Tomasz Wisniewski,Microsoft Zira Desktop,phone,"Hello, my name is Thomas Wisniewski.",False,"Hello, my name is Tomas Wisniewski.",False,Tomas Wisniewski,100.0,False
+Tomasz Wisniewski,Microsoft Zira Desktop,speakerphone,"Hello, my name is Tom Edwidge Muskie.",False,"Hello, my name is Tomas Wisniewski.",False,Tomas Wisniewski,100.0,False

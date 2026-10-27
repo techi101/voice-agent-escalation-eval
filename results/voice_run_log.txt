@@ -23,3 +23,27 @@ Rahima Begum           speakerphone raw='Hello, my name is Rick Himmel-Beatham.'
 Sunita Sharma          phone        raw='Hello, my name is Sunita Sharma.' | prompt='Hello, my name is Sunita Sharma.' | fuzzy='Sunita Sharma'
 Sunita Sharma          speakerphone raw='Hello, my name is Anita Sharma.' | prompt='Hello, my name is Sunita Sharma.' | fuzzy='Sunita Sharma'
 Krzysztof Nowak        phone        raw='Hello, my name is Christof Nowak.' | prompt='Hello, my name is Krystof Novak.' | fuzzy='Krystof Novak'
+Krzysztof Nowak        speakerphone raw='Hello, my name is Christophe Del Vec.' | prompt='Hello, my name is Krystof Novak.' | fuzzy='Krystof Novak'
+Andreea Ionescu        phone        raw='Hello, my name is Andrea Ionescu.' | prompt='Hello, my name is Andrea Ionescu.' | fuzzy='Andrea Ionescu'
+Andreea Ionescu        speakerphone raw='Hello, my name is Andrea Ionesco.' | prompt='Hello, my name is Andreea Ionescu.' | fuzzy='Andreea Ionescu'
+Niamh O'Connor         phone        raw="Hello, my name is Neomite O'Connor." | prompt="Hello, my name is Nia Maite O'Connor." | fuzzy="Nia O'Connor"
+Niamh O'Connor         speakerphone raw='Hello, my name is me and Michael Carter.' | prompt='Hello, my name is Nia Michael Connor.' | fuzzy='Niamh Connor'
+Gareth Llewellyn       phone        raw='Hello, my name is Gareth Llewellyn.' | prompt='Hello, my name is Gareth Llewellyn.' | fuzzy='Gareth Llewellyn'
+Gareth Llewellyn       speakerphone raw="Hello, my name is Gareth O'Ellen." | prompt='Hello, my name is Gareth Llewellyn.' | fuzzy='Gareth Llewellyn'
+Ade Bankole            phone        raw='Hello, my name is Abe Bankley.' | prompt='Hello, my name is Ada Bankole.' | fuzzy='Ada Bankole'
+Ade Bankole            speakerphone raw='Hello. My name is exactly...' | prompt='Hello. My name is Ada Bankole.' | fuzzy='Ada Bankole'
+Priya Raghunathan      phone        raw='Hello, my name is Priya Ravunathan.' | prompt='Hello, my name is Priya Raghunathan.' | fuzzy='Priya Raghunathan'
+Priya Raghunathan      speakerphone raw="Hello, my name is Cree, you're a unit then." | prompt='Hello, my name is Priya Raghunatham.' | fuzzy='Priya Raghunathan'
+Zofia Kowalczyk        phone        raw='Hello, my name is Sofia Kowalczyk.' | prompt='Hello, my name is Zofia Kowalcik.' | fuzzy='Zofia Kowalczyk'
+Zofia Kowalczyk        speakerphone raw='Hello, my name is Sophia Walcher.' | prompt='Hello, my name is Zofia Kowalski.' | fuzzy='Zofia Kowalski'
+Tomasz Wisniewski      phone        raw='Hello, my name is Thomas Wisniewski.' | prompt='Hello, my name is Tomas Wisniewski.' | fuzzy='Tomas Wisniewski'
+Tomasz Wisniewski      speakerphone raw='Hello, my name is Tom Edwidge Muskie.' | prompt='Hello, my name is Tomas Wisniewski.' | fuzzy='Tomas Wisniewski'
+# Voice slice: full-name capture (20 synthetic names x 2 line conditions)
+
+Exact full-name match, k/n = rate [Wilson 95%]. TTS voices (US English), not real speakers.
+
+| condition | raw ASR | + name-list prompt | + prompt and fuzzy match to list |
+|---|---|---|---|
+| phone | 9/20 = 45% [26%, 66%] | 7/20 = 35% [18%, 57%] | 10/20 = 50% [30%, 70%] |
+| speakerphone | 0/20 = 0% [0%, 16%] | 4/20 = 20% [8%, 42%] | 5/20 = 25% [11%, 47%] |
+

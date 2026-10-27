@@ -1,4 +1,4 @@
-"""Deterministic red-flag matcher.
+"""GP clinic red-flag rules for the shared matcher (vaeval/matcher.py).
 
 How it works, in plain terms:
   1. Clean the text: lowercase, keep letters/numbers/apostrophes only.
@@ -11,16 +11,11 @@ How it works, in plain terms:
      ("last year", "since my stroke two years ago") and nothing around it says
      it is happening now ("suddenly", "this morning", "right now").
 
-Word lists come from the wording of public nhs.uk pages (see scenarios.py for
-URLs) plus common romanised Hindi/Urdu/Punjabi/Bengali terms. They were tuned
+Word lists come from the wording of public nhs.uk pages (see the
+URLs in spec.py) plus common romanised Hindi/Urdu/Punjabi/Bengali terms. They were tuned
 on the DEV split only. They are not clinically validated and not complete.
 """
 from __future__ import annotations
-
-import re
-from dataclasses import dataclass
-
-from rapidfuzz import fuzz
 
 # category -> (action level, [ (A words, B words, window) ... ])
 # action level: "999" or "mh" (mental health crisis: 111 option 2, 999 if immediate)
@@ -92,71 +87,3 @@ PAST = {"last", "ago", "years", "year", "since", "had", "history", "used", "reco
         "months", "stable", "better", "fine"}
 NOW = {"now", "today", "suddenly", "sudden", "morning", "afternoon", "tonight", "minutes", "hour", "hours",
        "started", "abhi", "aaj", "achanak", "hune", "ekhon", "aj", "right", "woke"}
-
-_CLEAN = re.compile(r"[^a-z0-9'\s]")
-
-
-_NOT_NEW = re.compile(r"\b(nothing|nowt|no|not|nae|nothin)\s+(\w+\s+)?new\b")
-
-
-def tokenize(text: str) -> list[str]:
-    t = text.lower().replace("’", "'")
-    t = re.sub(r"'s\b", "", t)          # "arm's" -> "arm"
-    t = _NOT_NEW.sub(" notnew ", t)        # "nothing new" is a past/stable marker, not a "now" marker
-    return _CLEAN.sub(" ", t).split()
-
-
-def word_in(tok: str, vocab: set, thresh: int = 85) -> bool:
-    if tok in vocab:
-        return True
-    if len(tok) < 5:          # short words: exact only (avoid "arm" ~ "farm" style noise)
-        return False
-    return any(len(v) >= 5 and fuzz.ratio(tok, v) >= thresh for v in vocab)
-
-
-@dataclass
-class Hit:
-    category: str
-    level: str
-    a: str
-    b: str
-    position: int
-
-
-def find_hits(text: str) -> list[Hit]:
-    toks = tokenize(text)
-    hits: list[Hit] = []
-    for cat, (level, rules) in RULES.items():
-        for A, B, window in rules:
-            a_pos = [i for i, t in enumerate(toks) if word_in(t, A)]
-            if not a_pos:
-                continue
-            b_pos = [i for i, t in enumerate(toks) if word_in(t, B)]
-            for i in a_pos:
-                js = [j for j in b_pos if j != i and abs(j - i) <= window]
-                if js:
-                    hits.append(Hit(cat, level, toks[i], toks[js[0]], i))
-                    break
-            if hits and hits[-1].category == cat:
-                break
-    return hits
-
-
-def is_historical(text: str, pos: int, span: int = 12) -> bool:
-    """True if words near position `pos` describe the past and nothing nearby says 'now'."""
-    toks = tokenize(text)
-    lo = max(0, pos - span)
-    near = toks[lo: pos + span + 1]
-    past = False
-    for k, t in enumerate(near):
-        if t in PAST:
-            # "since this morning" / "since i woke up today" is about now, not the past
-            if t == "since" and any(x in NOW for x in toks[lo + k + 1: lo + k + 5]):
-                continue
-            past = True
-    return past and not any(t in NOW for t in near)
-
-
-def match(text: str) -> list[Hit]:
-    """Red-flag hits in `text` that are not about the past."""
-    return [h for h in find_hits(text) if not is_historical(text, h.position)]

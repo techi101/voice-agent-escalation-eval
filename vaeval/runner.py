@@ -1,9 +1,9 @@
-"""Play each transcript through the baseline agent, with or without the guard.
+"""Play each transcript through a domain's baseline agent, with or without the guard.
 
 Caller turns are scripted (they do not react to the agent). For each caller
-turn: (guard check, if on) -> agent reply -> stop if the call was escalated or
-transferred. The outcome of the call is the first escalation/transfer action,
-or "routine" if none happened.
+turn: (guard check, if on) -> agent reply -> stop if the call was escalated,
+transferred or ended. The outcome of the call is the first terminal action,
+or the domain's ROUTINE action if none happened.
 """
 from __future__ import annotations
 
@@ -13,15 +13,15 @@ from concurrent.futures import ThreadPoolExecutor
 from . import agent
 from .followup import asked_for
 from .guard import Guard
-from .scenarios import ROUTINE
 
 MODES = ("baseline", "guard", "guard_llm")
 
 
-def run_call(row: dict, mode: str) -> dict:
+def run_call(row: dict, mode: str, dom) -> dict:
     history: list[dict] = []
-    guard = Guard(use_llm=(mode == "guard_llm")) if mode != "baseline" else None
-    final_action, final_turn, decided_by, reason = ROUTINE, None, "none", ""
+    guard = Guard(dom.GUARD_CONFIG, use_llm=(mode == "guard_llm"), context=dom.guard_context(row)) if mode != "baseline" else None
+    system = dom.agent_system(row)
+    final_action, final_turn, decided_by, reason = dom.ROUTINE, None, "none", ""
     agent_replies: list[str] = []
     turn_log = []
     agent_latency, n_agent_calls = 0.0, 0
@@ -29,6 +29,7 @@ def run_call(row: dict, mode: str) -> dict:
     last_reply = None
     for i, text in enumerate(row["turns"]):
         user_text = text
+        d = None
         if guard is not None:
             d = guard.check(text, last_reply)
             guard_ms.append(d.latency_ms)
@@ -38,22 +39,22 @@ def run_call(row: dict, mode: str) -> dict:
                 turn_log.append({"caller": text, "guard": d.reason, "reply": d.reply, "action": d.action})
                 break
             if d.note:
-                user_text = f"{text}\n\n[Call-checking layer note to the receptionist: {d.note}]"
+                user_text = dom.NOTE_TEMPLATE.format(text=text, note=d.note)
         history.append({"role": "user", "text": user_text})
-        out = agent.respond(history)
+        out = agent.respond(history, system, dom.AGENT_ACTIONS, model=dom.AGENT_MODEL)
         n_agent_calls += 1
         agent_latency += out["latency_s"]
         history.append({"role": "model", "text": agent.model_turn_text(out)})
         agent_replies.append(out["reply"])
         last_reply = out["reply"]
-        turn_log.append({"caller": user_text, "guard": None if guard is None else d.reason,
+        turn_log.append({"caller": user_text, "guard": None if d is None else d.reason,
                          "reply": out["reply"], "action": out["action"]})
-        if out["action"] in agent.TERMINAL:
+        if out["action"] in dom.TERMINAL:
             final_action, final_turn, decided_by = out["action"], i, "agent"
             break
 
     followups = row.get("followups") or []
-    fu_asked = all(asked_for(f, agent_replies) for f in followups) if followups else None
+    fu_asked = all(asked_for(f, agent_replies, dom.ASK_PATTERNS) for f in followups) if followups else None
     return {
         "id": row["id"], "slice": row["slice"], "group": row["group"], "kind": row["kind"], "split": row["split"],
         "mode": mode, "expected": row["expected"], "acceptable": "|".join(row["acceptable"]),
@@ -69,6 +70,6 @@ def run_call(row: dict, mode: str) -> dict:
     }
 
 
-def run_all(rows: list[dict], mode: str, workers: int = 4) -> list[dict]:
+def run_all(rows: list[dict], mode: str, dom, workers: int = 2) -> list[dict]:
     with ThreadPoolExecutor(workers) as ex:
-        return list(ex.map(lambda r: run_call(r, mode), rows))
+        return list(ex.map(lambda r: run_call(r, mode, dom), rows))

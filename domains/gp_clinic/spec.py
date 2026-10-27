@@ -1,4 +1,4 @@
-"""Scenario specification. THIS FILE IS THE GROUND TRUTH.
+"""GP clinic domain: scenario specification. THIS FILE IS THE GROUND TRUTH.
 
 Every test case starts here as a structured spec written in code: which slice
 it belongs to, what the caller wants, which red flag (if any) appears and in
@@ -19,9 +19,9 @@ example a practice's Clinical Safety Officer) would need to own it.
 """
 from __future__ import annotations
 
-import hashlib
 import json
-from dataclasses import asdict, dataclass, field
+
+from vaeval.scenario import Scenario, assign_splits
 
 # ---------------------------------------------------------------- actions
 # The agent (baseline or guarded) ends each call with one of these outcomes.
@@ -164,30 +164,6 @@ CAPTURE_BRIEFS = [
 ]
 
 
-@dataclass
-class Scenario:
-    id: str
-    slice: str
-    group: str          # red_flag | routine | hard_negative | human | capture
-    kind: str           # e.g. stroke_face, rx_unnamed, human, capture
-    expected: str       # expected final action
-    acceptable: list    # actions that count as correct
-    brief: str          # plain-English content brief for the writer
-    persona: str
-    persona_note: str
-    n_turns: int
-    signal_turn: int | None     # 0-based caller turn where the key signal first appears
-    turn_plan: list = field(default_factory=list)
-    followups: list = field(default_factory=list)   # required follow-up fields
-    handoff_by_turn: int | None = None              # policy deadline for human handoff (0-based caller turn)
-    asr_wer: float = 0.0
-    source: str = ""
-    split: str = ""
-
-    def to_dict(self):
-        return asdict(self)
-
-
 def _turn_plan(group: str, kind: str, signal_turn: int | None, n_turns: int, brief: str) -> list[str]:
     if group == "red_flag":
         plan = []
@@ -300,23 +276,6 @@ def build_scenarios(seed: int = 7) -> list[Scenario]:
             out.append(sc)
     assign_splits(out, dev_frac=0.4)
     return out
-
-
-def assign_splits(scenarios: list[Scenario], dev_frac: float = 0.4) -> None:
-    """Deterministic 40/60 dev/test split by scenario, stratified by slice x group.
-
-    Within each (slice, group) cell, scenarios are ordered by a hash of their id
-    and the first round(dev_frac * n) go to dev. The split is fixed before the
-    guard is written, and the guard is tuned on dev only.
-    """
-    cells: dict[tuple, list[Scenario]] = {}
-    for s in scenarios:
-        cells.setdefault((s.slice, s.group), []).append(s)
-    for cell in cells.values():
-        cell.sort(key=lambda s: hashlib.sha256(s.id.encode()).hexdigest())
-        n_dev = round(dev_frac * len(cell))
-        for i, s in enumerate(cell):
-            s.split = "dev" if i < n_dev else "test"
 
 
 if __name__ == "__main__":

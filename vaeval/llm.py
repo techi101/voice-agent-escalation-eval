@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CACHE_PATH = ROOT / "cache" / "llm_cache.jsonl"
-DEFAULT_MODEL = os.environ.get("GPEVAL_MODEL", "gemini-3.5-flash-lite")
+DEFAULT_MODEL = os.environ.get("VAEVAL_MODEL", "gemini-3.5-flash-lite")
 
 _lock = threading.Lock()
 _cache: dict[str, dict] | None = None
@@ -28,15 +28,17 @@ STATS = {"network_calls": 0, "cache_hits": 0, "retries": 0}
 
 def _load_cache() -> dict[str, dict]:
     global _cache
-    if _cache is None:
-        _cache = {}
-        if CACHE_PATH.exists():
-            with CACHE_PATH.open(encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        rec = json.loads(line)
-                        _cache[rec["key"]] = rec
+    with _lock:  # threads must not see a half-loaded cache (that caused spurious cache misses)
+        if _cache is None:
+            loaded = {}
+            if CACHE_PATH.exists():
+                with CACHE_PATH.open(encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            rec = json.loads(line)
+                            loaded[rec["key"]] = rec
+            _cache = loaded
     return _cache
 
 
@@ -84,7 +86,7 @@ def generate(
         STATS["cache_hits"] += 1
         rec = cache[key]
         return {"text": rec["text"], "latency_s": rec["latency_s"], "cached": True}
-    if offline:
+    if offline or os.environ.get("VAEVAL_OFFLINE") == "1":
         raise KeyError("offline mode: response not cached")
 
     from google.genai import types

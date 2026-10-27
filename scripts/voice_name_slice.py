@@ -126,17 +126,33 @@ def main():
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
+    summarise()
+
+
+def summarise():
+    """Build the markdown table from voice_names.csv (no re-transcription needed)."""
     sys.path.insert(0, str(ROOT))
-    from gpeval.metrics import fmt
-    lines = ["| condition | raw ASR | + name-list prompt | + prompt and fuzzy match to list |", "|---|---|---|---|"]
+    from vaeval.metrics import fmt
+    rows = list(csv.DictReader((OUT / "voice_names.csv").open(encoding="utf-8")))
+    for r in rows:
+        for k in ("raw_ok", "prompt_ok", "fuzzy_ok"):
+            r[k] = r[k] == "True"
+        # a confident match to a DIFFERENT registered patient is the dangerous error
+        r["wrong_patient"] = r["fuzzy"] in REGISTER and not r["fuzzy_ok"]
+    lines = ["| condition | raw ASR | + name-list prompt | + prompt and fuzzy match to list | matched to the WRONG registered patient |",
+             "|---|---|---|---|---|"]
     for cond in ("phone", "speakerphone"):
         rs = [r for r in rows if r["condition"] == cond]
-        lines.append(f"| {cond} | " + " | ".join(fmt(sum(r[k] for r in rs), len(rs)) for k in ("raw_ok", "prompt_ok", "fuzzy_ok")) + " |")
+        lines.append(f"| {cond} | " + " | ".join(fmt(sum(r[k] for r in rs), len(rs)) for k in ("raw_ok", "prompt_ok", "fuzzy_ok", "wrong_patient")) + " |")
     md = ("# Voice slice: full-name capture (20 synthetic names x 2 line conditions)\n\n"
-          "Exact full-name match, k/n = rate [Wilson 95%]. TTS voices (US English), not real speakers.\n\n" + "\n".join(lines) + "\n")
+          "Exact full-name match, k/n = rate [Wilson 95%]. TTS voices (US English), not real speakers. "
+          "The name list holds the 20 callers plus 40 similar-sounding distractors.\n\n" + "\n".join(lines) + "\n")
     (OUT / "voice_names.md").write_text(md, encoding="utf-8")
     print(md)
 
 
 if __name__ == "__main__":
-    main()
+    if "--summarise-only" in sys.argv:
+        summarise()
+    else:
+        main()

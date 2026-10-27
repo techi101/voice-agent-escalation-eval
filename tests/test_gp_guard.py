@@ -1,13 +1,22 @@
-"""Unit tests for the guard layer and red-flag matcher. No LLM calls."""
+"""Unit tests for the GP clinic guard and red-flag rules. No LLM calls."""
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from gpeval import redflags  # noqa: E402
-from gpeval.asr_noise import add_noise  # noqa: E402
-from gpeval.guard import Guard  # noqa: E402
-from gpeval.scenarios import ADVISE_111, ADVISE_999, TRANSFER  # noqa: E402
+from domains.gp_clinic.guard_config import CONFIG  # noqa: E402
+from domains.gp_clinic.noise import CONFUSIONS  # noqa: E402
+from domains.gp_clinic.spec import ADVISE_111, ADVISE_999, TRANSFER  # noqa: E402
+from vaeval.asr_noise import add_noise  # noqa: E402
+from vaeval.guard import Guard as _Guard  # noqa: E402
+
+
+def Guard():  # noqa: N802
+    return _Guard(CONFIG)
+
+
+class redflags:  # noqa: N801  (keeps the old test wording)
+    match = staticmethod(CONFIG.matcher.match)
 
 
 def cats(text):
@@ -83,6 +92,6 @@ def test_routine_passes():
 
 
 def test_noise_deterministic():
-    a = add_noise("my chest is very tight and painful right now", 0.3, "x")
-    b = add_noise("my chest is very tight and painful right now", 0.3, "x")
+    a = add_noise("my chest is very tight and painful right now", 0.3, "x", CONFUSIONS)
+    b = add_noise("my chest is very tight and painful right now", 0.3, "x", CONFUSIONS)
     assert a == b

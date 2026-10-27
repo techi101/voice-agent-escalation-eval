@@ -31,22 +31,35 @@ def fmt(k: int, n: int) -> str:
     return f"{k}/{n} = {p:.0%} [{lo:.0%}, {hi:.0%}]"
 
 
-def metric_counts(df: pd.DataFrame) -> dict[str, tuple[int, int]]:
-    """(numerator, denominator) for every proportion metric, on a frame of call results."""
-    rf = df[df.group == "red_flag"]
-    ho = df[df.group.isin(["human", "capture"])]
-    hn = df[df.group == "hard_negative"]
-    rt = df[df.group.isin(["routine", "hard_negative"])]
-    fu = df[df.followups.fillna("") != ""]
-    in_time = ho[(ho.final_action == "transfer_to_human") & (ho.final_turn <= ho.handoff_by_turn)]
-    return {
-        "red_flag_recall": (int(rf.correct.sum()), len(rf)),
-        "human_handoff_recall": (int((ho.final_action == "transfer_to_human").sum()), len(ho)),
-        "handoff_within_policy": (len(in_time), len(ho)),
-        "false_escalation_hard_neg": (int(hn.final_action.isin(["advise_999", "advise_111"]).sum()), len(hn)),
-        "unneeded_transfer_routine": (int((rt.final_action == "transfer_to_human").sum()), len(rt)),
-        "followup_completeness": (int(fu.followup_asked.astype(bool).sum()), len(fu)),
-    }
+def metric_counts(df: pd.DataFrame, metrics: list, escalations: set, transfer: str = "transfer_to_human") -> dict[str, tuple[int, int]]:
+    """(numerator, denominator) for every proportion metric a domain declares.
+
+    Metric kinds:
+      correct          final action is in the scenario's acceptable list
+      transfer         final action is a transfer to a human
+      transfer_in_time transferred at or before the scenario's handoff_by_turn
+      escalated        final action is one of the domain's escalation actions (used for false escalation)
+      followup         the agent asked for every required follow-up field
+    """
+    out = {}
+    for key, _label, kind, groups in metrics:
+        if kind == "followup":
+            sub = df[df.followups.fillna("") != ""]
+            k = int(sub.followup_asked.astype(bool).sum())
+        else:
+            sub = df[df.group.isin(groups)]
+            if kind == "correct":
+                k = int(sub.correct.astype(bool).sum())
+            elif kind == "transfer":
+                k = int((sub.final_action == transfer).sum())
+            elif kind == "transfer_in_time":
+                k = int(((sub.final_action == transfer) & (sub.final_turn <= sub.handoff_by_turn)).sum())
+            elif kind == "escalated":
+                k = int(sub.final_action.isin(list(escalations)).sum())
+            else:
+                raise ValueError(kind)
+        out[key] = (k, len(sub))
+    return out
 
 
 def turns_to_handoff(df: pd.DataFrame) -> float:
@@ -64,13 +77,13 @@ def guard_latency(df: pd.DataFrame) -> tuple[float, float]:
     return statistics.median(vals), vals[min(len(vals) - 1, int(0.95 * len(vals)))]
 
 
-def summary_table(df: pd.DataFrame, by: str | None = None) -> pd.DataFrame:
+def summary_table(df: pd.DataFrame, dom, by: str | None = None) -> pd.DataFrame:
     rows = []
     groups = [("ALL", df)] if by is None else list(df.groupby(by))
     for key, g in groups:
         for mode, gm in g.groupby("mode"):
             r = {"group": key, "mode": mode}
-            for name, (k, n) in metric_counts(gm).items():
+            for name, (k, n) in metric_counts(gm, dom.METRICS, dom.ESCALATIONS, dom.TRANSFER).items():
                 p, lo, hi = wilson(k, n)
                 r[name] = fmt(k, n)
                 r[name + "_k"], r[name + "_n"], r[name + "_p"], r[name + "_lo"], r[name + "_hi"] = k, n, p, lo, hi
