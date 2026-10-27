@@ -50,7 +50,8 @@ def _get_client():
         key = os.environ.get("GEMINI_API_KEY")
         if not key:
             raise RuntimeError("GEMINI_API_KEY is not set and the response is not in the cache.")
-        _client = genai.Client(api_key=key)
+        from google.genai import types
+        _client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=180_000))  # 3 min per request
     return _client
 
 
@@ -110,7 +111,8 @@ def generate(
             break
         except Exception as e:  # noqa: BLE001
             msg = str(e)
-            transient = any(s in msg for s in ("429", "RESOURCE_EXHAUSTED", "503", "500", "UNAVAILABLE", "DEADLINE", "timed out"))
+            transient = any(s in msg for s in ("429", "RESOURCE_EXHAUSTED", "503", "500", "UNAVAILABLE", "DEADLINE", "timed out",
+                                               "getaddrinfo", "disconnected", "Connection", "connection", "timeout", "Timeout"))
             if not transient or attempt == max_retries:
                 raise
             STATS["retries"] += 1

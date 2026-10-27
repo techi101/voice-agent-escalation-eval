@@ -52,7 +52,8 @@ def check_batch(dom, items: list[tuple[Scenario, list[str]]]) -> dict[str, dict]
         for s, turns in items
     ]
     r = llm.generate("Check these transcripts:\n" + json.dumps(payload, ensure_ascii=False, indent=1),
-                     system=dom.CHECKER_SYSTEM, temperature=0.0, model=getattr(dom, "WRITER_MODEL", llm.DEFAULT_MODEL))
+                     system=dom.CHECKER_SYSTEM, temperature=0.0,
+                     model=getattr(dom, "CHECKER_MODEL", getattr(dom, "WRITER_MODEL", llm.DEFAULT_MODEL)))
     data = llm.parse_json(r["text"])
     return {c["id"]: c for c in data["checks"]}
 
@@ -66,13 +67,15 @@ def build_transcripts(dom, scenarios: list[Scenario], data_dir: Path, write_bs: 
         if not pending:
             break
         written: dict[str, list[str]] = {}
-        for i in range(0, len(pending), write_bs):
-            batch = pending[i:i + write_bs]
+        # a domain can retry one spec per call, so one refusal cannot sink a whole batch
+        bs = write_bs if attempt == 0 else getattr(dom, "RETRY_BATCH", write_bs)
+        for i in range(0, len(pending), bs):
+            batch = pending[i:i + bs]
             try:
                 written.update(write_batch(dom, batch, attempt))
             except Exception as e:  # noqa: BLE001
                 print(f"  write batch failed: {e}")
-            print(f"  [attempt {attempt}] written {min(i + write_bs, len(pending))}/{len(pending)}", flush=True)
+            print(f"  [attempt {attempt}] written {min(i + bs, len(pending))}/{len(pending)}", flush=True)
         to_check = [(s, written[s.id]) for s in pending if s.id in written]
         checks: dict[str, dict] = {}
         for i in range(0, len(to_check), check_bs):

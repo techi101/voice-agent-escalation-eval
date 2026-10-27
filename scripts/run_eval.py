@@ -33,6 +33,8 @@ def main():
     ap.add_argument("--split", default="test", choices=["dev", "test", "all"])
     ap.add_argument("--modes", nargs="+", default=["baseline", "guard"])
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--cached-only", action="store_true",
+                    help="keep only scenarios whose calls are all in the cache for every mode (used when the daily API quota ran out)")
     args = ap.parse_args()
     dom = domain.load(args.domain)
     COLS = [m[0] for m in dom.METRICS] + ["turns_to_handoff_mean"]
@@ -42,6 +44,20 @@ def main():
     rows = [json.loads(line) for line in (domain.data_dir(args.domain) / "transcripts.jsonl").open(encoding="utf-8")]
     if args.split != "all":
         rows = [r for r in rows if r["split"] == args.split]
+    if args.cached_only:
+        import os
+        from vaeval.runner import run_call
+        os.environ["VAEVAL_OFFLINE"] = "1"
+        keep = []
+        for r in rows:
+            try:
+                for mode in args.modes:
+                    run_call(r, mode, dom)
+                keep.append(r)
+            except KeyError:
+                pass
+        print(f"cached-only: {len(keep)} of {len(rows)} scenarios fully cached")
+        rows = keep
     out = domain.results_dir(args.domain, args.split)
     out.mkdir(parents=True, exist_ok=True)
 
