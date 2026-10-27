@@ -11,7 +11,7 @@ The harness is general. A **domain** is a plug-in folder with its own scenario s
 | `gp_clinic` | AI receptionist for UK GP (family doctor) surgeries | Public reports in 2026 of AI receptionists failing callers with regional accents, speech affected by stroke, and callers who wanted a human. Sudden slurred speech is itself an NHS 999 sign. |
 | `collections` | Indian loan EMI reminder and collection calls | RBI rules bar harassment and calls outside 8 AM to 7 PM. A collections bot must stop when the person is bereaved, distressed or mentions self-harm, and must not press someone who says they already paid. Callers speak Indian English, Hinglish and regional varieties, often on noisy lines. |
 
-A separate real-audio slice (recorded accented speech through a phone-band ASR pipeline) is being built in [`audio_asr/`](audio_asr/README.md). See the section "Real-audio ASR slice" below.
+All results here are on text transcripts. A real-audio check (recorded accented speech through phone-band ASR) is not part of this repo yet.
 
 ---
 
@@ -118,12 +118,7 @@ tests/                  pytest unit tests (guards, metrics, Wilson intervals)
 data/<domain>/          scenarios.jsonl (labels), transcripts.jsonl, validation_log.csv
 results/<domain>/       dev/ and test/ results, spot_check.md
 cache/                  every LLM response (no secrets)
-audio_asr/              real-audio ASR slice (built separately; see its README)
 ```
-
-## Real-audio ASR slice (see audio_asr/README.md)
-
-This section is filled in by the separate real-audio work in `audio_asr/` (accented speech clips, phone-band audio, faster-whisper, per-accent name and keyword error, and a name-list biasing fix). See [audio_asr/README.md](audio_asr/README.md).
 
 A small earlier pilot is in `scripts/voice_name_slice.py` and `results/voice_names/`: 20 synthetic names spoken by two US-English Windows TTS voices over a simulated phone line and speakerphone, transcribed with faster-whisper small. Raw full-name accuracy was 9/20 (phone) and 0/20 (speakerphone). Giving Whisper the practice's name list as a prompt and fuzzy-matching to the list raised correct names to 10/20 and 5/20, but matched the caller to a **different** registered patient in 9/20 and 12/20 clips, because the list held similar-sounding names. A wrong confident match is worse than no match, so name-list biasing needs a second key such as date of birth. TTS voices are not real accents.
 
