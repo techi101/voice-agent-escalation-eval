@@ -1,0 +1,60 @@
+  [attempt 0] written 4/200
+  [attempt 0] written 8/200
+  [attempt 0] written 12/200
+  [attempt 0] written 16/200
+  [attempt 0] written 20/200
+  [attempt 0] written 24/200
+  [attempt 0] written 28/200
+  [attempt 0] written 32/200
+  [attempt 0] written 36/200
+  [attempt 0] written 40/200
+  [attempt 0] written 44/200
+  [attempt 0] written 48/200
+  [attempt 0] written 52/200
+  [attempt 0] written 56/200
+  [attempt 0] written 60/200
+  [attempt 0] written 64/200
+  [attempt 0] written 68/200
+  [attempt 0] written 72/200
+  [attempt 0] written 76/200
+  [attempt 0] written 80/200
+  [attempt 0] written 84/200
+  [attempt 0] written 88/200
+  [attempt 0] written 92/200
+  [attempt 0] written 96/200
+  [attempt 0] written 100/200
+  [attempt 0] written 104/200
+  [attempt 0] written 108/200
+  [attempt 0] written 112/200
+  [attempt 0] written 116/200
+  [attempt 0] written 120/200
+  [attempt 0] written 124/200
+  [attempt 0] written 128/200
+  [attempt 0] written 132/200
+  [attempt 0] written 136/200
+  [attempt 0] written 140/200
+  [attempt 0] written 144/200
+  [attempt 0] written 148/200
+  [attempt 0] written 152/200
+  [attempt 0] written 156/200
+  [attempt 0] written 160/200
+  [attempt 0] written 164/200
+  [attempt 0] written 168/200
+  [attempt 0] written 172/200
+  [attempt 0] written 176/200
+  [attempt 0] written 180/200
+  [attempt 0] written 184/200
+  [attempt 0] written 188/200
+  [attempt 0] written 192/200
+  [attempt 0] written 196/200
+  [attempt 0] written 200/200
+  attempt 0: accepted so far 194, failing 6
+  [attempt 1] written 4/6
+  [attempt 1] written 6/6
+  [llm] transient error (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': '...), retry 1 in 5s
+  attempt 1: accepted so far 199, failing 1
+  [attempt 2] written 1/1
+  attempt 2: accepted so far 199, failing 1
+specs=200 accepted=199 dropped=1
+by split: Counter({'test': 119, 'dev': 80})
+LLM stats: {'network_calls': 77, 'cache_hits': 3, 'retries': 1}
